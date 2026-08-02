@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reaction Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e14; --bg2:#0f1520; --panel:#121a26; --panel2:#161f2d;
+  --line:#233043; --line-soft:#1a2534;
+  --ink:#e8edf5; --ink-dim:#8fa1b8; --ink-faint:#5c6d84;
+  --accent:#5eead4; --accent-ink:#04241d;
+  --organic:#8ee06a; --organic-soft:#1e2f18;
+  --inorganic:#5eb3ff; --inorganic-soft:#182a3a;
+  --verified:#f5b942; --verified-soft:#332a13;
+  --generated:#c39bff; --generated-soft:#271c3a;
+  --shadow: 0 24px 60px -20px rgba(0,0,0,.6);
+}
+html.light{
+  --bg:#f3efe4; --bg2:#ece5d3; --panel:#fbf9f2; --panel2:#f4efe1;
+  --line:#d9d0b8; --line-soft:#e6dfc9;
+  --ink:#241f16; --ink-dim:#5a5240; --ink-faint:#8a8064;
+  --accent:#0f7a68; --accent-ink:#f3efe4;
+  --organic:#437a1f; --organic-soft:#dfeecf;
+  --inorganic:#1c6fb0; --inorganic-soft:#d9e8f4;
+  --verified:#9c7f0c; --verified-soft:#f0e7c4;
+  --generated:#6c3fc9; --generated-soft:#e5dbf7;
+  --shadow: 0 24px 50px -20px rgba(60,50,20,.25);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background: radial-gradient(ellipse 1200px 600px at 15% -10%, var(--bg2), transparent), var(--bg);
+  color:var(--ink); font-family:'Inter',system-ui,sans-serif; min-height:100vh;
+}
+.mono{font-family:'JetBrains Mono',monospace;}
+.display{font-family:'Fraunces',serif;}
+::selection{background:var(--accent);color:var(--accent-ink);}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px;}
+
+.app{max-width:1180px;margin:0 auto;padding:28px 22px 90px;}
+.hero{display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; margin-bottom:26px; padding-bottom:22px; border-bottom:1px solid var(--line-soft);}
+.hero-title{display:flex; flex-direction:column; gap:6px; max-width:640px;}
+.eyebrow{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:8px;}
+.eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);}
+h1.display{font-size:42px; margin:0; font-weight:600; letter-spacing:-.01em; line-height:1.05;}
+.hero-sub{color:var(--ink-dim); font-size:14.5px; line-height:1.6; margin-top:2px;}
+.icon-btn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line); background:var(--panel); color:var(--ink); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:border-color .2s, transform .15s;}
+.icon-btn:hover{border-color:var(--accent); transform:translateY(-1px);}
+
+.honesty-banner{
+  background:var(--panel2); border:1px solid var(--line-soft); border-radius:14px; padding:16px 18px;
+  font-size:13px; line-height:1.65; color:var(--ink-dim); margin-bottom:28px; display:flex; gap:12px;
+}
+.honesty-banner svg{flex:none; margin-top:2px; color:var(--accent);}
+.honesty-banner b{color:var(--ink);}
+
+.section-head{display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:14px; flex-wrap:wrap;}
+.section-head h2{font-size:22px; margin:0; font-weight:600;}
+.section-head p{margin:4px 0 0; font-size:13px; color:var(--ink-faint);}
+
+/* Combinatorial counter */
+.counter-card{
+  background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:28px 26px; margin-bottom:16px;
+  text-align:center; box-shadow:var(--shadow);
+}
+.counter-num{font-family:'JetBrains Mono',monospace; font-size:52px; font-weight:600; color:var(--accent); letter-spacing:-.02em;}
+.counter-label{color:var(--ink-dim); font-size:13.5px; margin-top:6px;}
+.family-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; margin-bottom:32px;}
+.family-card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px;}
+.family-card h4{margin:0 0 8px; font-size:14px; font-weight:600;}
+.family-card .formula{font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--ink-faint); line-height:1.6;}
+.family-card .fam-total{font-family:'JetBrains Mono',monospace; font-size:18px; color:var(--accent); margin-top:8px;}
+
+/* Generator */
+.generator-card{background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:24px; margin-bottom:32px;}
+.fam-select-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
+.fam-chip{padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--panel2); font-size:12.5px; cursor:pointer; color:var(--ink-dim); transition:all .15s;}
+.fam-chip.active{background:var(--generated-soft); border-color:var(--generated); color:var(--ink);}
+.param-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:18px;}
+.param-field label{display:block; font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px;}
+.param-field select, .param-field input[type=number]{
+  width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--ink); border-radius:9px; padding:9px 10px; font-size:13.5px; font-family:'Inter',sans-serif;
+}
+.gen-actions{display:flex; gap:10px; flex-wrap:wrap;}
+.btn{padding:11px 20px; border-radius:10px; border:1px solid var(--accent); background:var(--accent); color:var(--accent-ink); font-weight:600; font-size:13.5px; cursor:pointer; transition:opacity .15s;}
+.btn:hover{opacity:.88;}
+.btn.secondary{background:transparent; color:var(--ink); border-color:var(--line);}
+.btn.secondary:hover{border-color:var(--generated);}
+
+.rxn-card{background:var(--panel2); border:1px solid var(--line-soft); border-radius:12px; padding:16px 18px; margin-bottom:10px; animation:slidein .3s ease;}
+@keyframes slidein{from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:translateY(0);}}
+.rxn-card .rxn-badges{display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;}
+.badge{font-size:10px; font-family:'JetBrains Mono',monospace; padding:3px 8px; border-radius:6px; text-transform:uppercase; letter-spacing:.04em;}
+.badge.generated{background:var(--generated-soft); color:var(--generated);}
+.badge.verified{background:var(--verified-soft); color:var(--verified);}
+.badge.organic{background:var(--organic-soft); color:var(--organic);}
+.badge.inorganic{background:var(--inorganic-soft); color:var(--inorganic);}
+.rxn-card .eq{font-family:'JetBrains Mono',monospace; font-size:15px; margin-bottom:8px; color:var(--ink);}
+.rxn-card .meta-row{font-size:12.5px; color:var(--ink-dim); line-height:1.7;}
+.rxn-card .meta-row b{color:var(--ink-faint); font-weight:600;}
+.session-empty{text-align:center; padding:40px 20px; color:var(--ink-faint); font-size:13px;}
+.session-toolbar{display:flex; justify-content:space-between; align-items:center; margin:18px 0 10px; flex-wrap:wrap; gap:8px;}
+.session-toolbar input{background:var(--panel2); border:1px solid var(--line); color:var(--ink); border-radius:9px; padding:8px 12px; font-size:12.5px; width:220px;}
+.clear-link{font-size:12px; color:var(--ink-faint); cursor:pointer; font-family:'JetBrains Mono',monospace;}
+.clear-link:hover{color:var(--ink);}
+
+/* Verified library */
+.lib-controls{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px;}
+.lib-controls input, .lib-controls select{background:var(--panel2); border:1px solid var(--line); color:var(--ink); border-radius:9px; padding:9px 12px; font-size:13px;}
+.lib-count{font-size:12px; color:var(--ink-faint); margin-bottom:14px; font-family:'JetBrains Mono',monospace;}
+.lib-grid{display:grid; grid-template-columns:1fr; gap:10px;}
+.lib-item{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px; cursor:pointer; transition:border-color .15s;}
+.lib-item:hover{border-color:var(--verified);}
+.lib-item h4{margin:0 0 8px; font-size:15.5px; font-family:'Fraunces',serif; font-weight:600;}
+.lib-item .eq{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink-dim); margin-bottom:8px;}
+.lib-detail{display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--line-soft); font-size:13px; color:var(--ink-dim); line-height:1.7;}
+.lib-detail.show{display:block;}
+.lib-detail div{margin-bottom:8px;}
+.lib-detail b{color:var(--ink-faint); font-weight:600; text-transform:uppercase; font-size:10.5px; letter-spacing:.05em; display:block; margin-bottom:3px;}
+
+@media(max-width:640px){
+  h1.display{font-size:30px;}
+  .counter-num{font-size:36px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hero">
+    <div class="hero-title">
+      <div class="eyebrow">Interactive Chemistry · Organic &amp; Inorganic</div>
+      <h1 class="display">Reaction Explorer</h1>
+      <div class="hero-sub">Generate chemically valid reactions across a combinatorial parameter space, or browse a curated library of real, verified named reactions.</div>
+    </div>
+    <button class="icon-btn" id="themeToggle" title="Toggle dark / light mode"></button>
+  </div>
+
+  <div class="honesty-banner">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    <div><b>Two different things live here.</b> The generator below applies real reaction rules (substitution, addition, esterification, redox, coordination chemistry) across real chemical parameters — chain length, halogen, nucleophile, solvent, temperature — which is how it legitimately reaches millions of combinations. It's a rule-based predictor, not a lookup of individually verified literature reactions. The library further down is the opposite: ~70 real, textbook-verified named reactions with accurate history. Each generated card and each library card is labeled so you always know which you're looking at.</div>
+  </div>
+
+  <div class="section-head">
+    <div>
+      <h2>Combinatorial Reaction Space</h2>
+      <p>Computed live from the actual parameter counts below — not a marketing number.</p>
+    </div>
+  </div>
+  <div class="counter-card">
+    <div class="counter-num mono" id="grandTotal">–</div>
+    <div class="counter-label">total addressable reaction instances across all families</div>
+  </div>
+  <div class="family-grid" id="familyGrid"></div>
+
+  <div class="section-head">
+    <div>
+      <h2>Reaction Generator</h2>
+      <p>Pick a family, set the parameters, generate a specific instance.</p>
+    </div>
+  </div>
+  <div class="generator-card">
+    <div class="fam-select-row" id="famSelectRow"></div>
+    <div class="param-grid" id="paramGrid"></div>
+    <div class="gen-actions">
+      <button class="btn" id="genBtn">Generate Reaction</button>
+      <button class="btn secondary" id="randBtn">Randomize ×5</button>
+    </div>
+  </div>
+
+  <div class="session-toolbar">
+    <input type="text" id="sessionSearch" placeholder="Search generated reactions…">
+    <span class="clear-link" id="clearSession">Clear session</span>
+  </div>
+  <div id="sessionList"><div class="session-empty">Generated reactions will appear here.</div></div>
+
+  <div class="section-head" style="margin-top:40px;">
+    <div>
+      <h2>Verified Named Reactions Library</h2>
+      <p>~70 real, textbook reactions with accurate discovery history and applications.</p>
+    </div>
+  </div>
+  <div class="lib-controls">
+    <input type="text" id="libSearch" placeholder="Search reactions, compounds, applications…">
+    <select id="libCatFilter"><option value="">All categories</option><option value="organic">Organic</option><option value="inorganic">Inorganic</option></select>
+    <select id="libDomainFilter"><option value="">All domains</option></select>
+  </div>
+  <div class="lib-count" id="libCount"></div>
+  <div class="lib-grid" id="libGrid"></div>
+</div>
+
+<script id="curated-data" type="application/json">[{"name":"Haber–Bosch Process","cat":"inorganic","type":"Synthesis","domain":"Industrial / Agriculture","eq":"N₂ + 3H₂ ⇌ 2NH₃","cond":"Fe catalyst, 400–450°C, 150–300 atm","app":"Produces ammonia for nitrogen fertilizers, feeding roughly half the world's population.","notes":"One of the most consequential industrial reactions in history; Haber and Bosch won Nobel Prizes for it.","discoverer":"Developed by Fritz Haber, who in 1909 first fixed nitrogen at high pressure using an osmium catalyst at Karlsruhe; engineer Carl Bosch then scaled it into an industrial process at BASF by 1913, replacing iron for osmium."},{"name":"Contact Process","cat":"inorganic","type":"Redox / Synthesis","domain":"Industrial","eq":"2SO₂ + O₂ ⇌ 2SO₃ → H₂SO₄","cond":"V₂O₅ catalyst, ~450°C","app":"Main industrial route to sulfuric acid, the most-produced industrial chemical worldwide.","notes":"Used in fertilizers, batteries, and chemical synthesis.","discoverer":"Developed industrially in Britain in the 1870s (patented by Peregrine Phillips in 1831 using a platinum catalyst); the vanadium-oxide catalyst version used today became standard in the early 20th century for its lower cost and resistance to poisoning."},{"name":"Ostwald Process","cat":"inorganic","type":"Redox","domain":"Industrial","eq":"4NH₃ + 5O₂ → 4NO + 6H₂O","cond":"Pt/Rh catalyst, ~900°C","app":"Converts ammonia to nitric acid, used in fertilizers and explosives manufacturing.","notes":"Second step oxidizes NO to NO₂, which is absorbed in water to form HNO₃.","discoverer":"Developed by Wilhelm Ostwald, who patented the catalytic oxidation of ammonia to nitric acid in 1902, building on earlier observations that platinum could catalyze ammonia oxidation."},{"name":"Solvay Process","cat":"inorganic","type":"Precipitation","domain":"Industrial","eq":"NaCl + NH₃ + CO₂ + H₂O → NaHCO₃↓ + NH₄Cl","cond":"Room temperature, brine + ammonia + CO₂","app":"Industrial production of sodium carbonate (soda ash) for glass and detergent manufacturing.","notes":"Largely superseded natural soda ash mining in the 20th century.","discoverer":"Developed by Belgian industrial chemist Ernest Solvay, who patented his ammonia-soda process in 1861 and built the first successful commercial plant by 1863 after years of engineering refinement."},{"name":"Thermite Reaction","cat":"inorganic","type":"Redox","domain":"Industrial / Materials","eq":"2Al + Fe₂O₃ → Al₂O₃ + 2Fe","cond":"Ignition source (magnesium ribbon)","app":"Used for welding railway tracks and in incendiary devices.","notes":"Extremely exothermic; produces molten iron in seconds.","discoverer":"Discovered in 1893 and patented in 1895 by German chemist Hans Goldschmidt, who was searching for a way to produce pure metals without carbon contamination and found that aluminium could violently reduce metal oxides."},{"name":"Chlor-Alkali Process","cat":"inorganic","type":"Electrolysis","domain":"Industrial","eq":"2NaCl + 2H₂O → Cl₂ + H₂ + 2NaOH","cond":"Electrolysis, membrane cell","app":"Produces chlorine and sodium hydroxide for PVC, bleach, and water treatment.","notes":"One of the largest electrochemical processes in the chemical industry.","discoverer":"Industrial electrolytic production of chlorine and caustic soda emerged in the 1890s, enabled by advances in electrical generation; the mercury-cell method was pioneered by Hamilton Castner and Karl Kellner independently around 1892."},{"name":"Hall–Héroult Process","cat":"inorganic","type":"Electrolysis","domain":"Industrial / Materials","eq":"2Al₂O₃ → 4Al + 3O₂","cond":"Molten cryolite, electrolysis, ~950°C","app":"The primary industrial method for producing aluminium metal from alumina.","notes":"Highly energy-intensive; aluminium is sometimes called 'solid electricity'.","discoverer":"Discovered independently and almost simultaneously in 1886 by American Charles Martin Hall and Frenchman Paul Héroult, both 22-year-old chemists working separately, who found that alumina dissolves in molten cryolite to allow low-temperature electrolytic extraction of aluminium."},{"name":"Downs Process","cat":"inorganic","type":"Electrolysis","domain":"Industrial","eq":"2NaCl (molten) → 2Na + Cl₂","cond":"Electrolysis of molten NaCl, ~800°C","app":"Industrial production of metallic sodium and chlorine gas.","notes":"Requires molten salt since aqueous electrolysis would just produce NaOH.","discoverer":"Developed by American chemist Joseph Taylor Downs, who patented the molten-salt electrolysis cell for sodium production in 1924, improving on Humphry Davy's original 1807 electrolytic method."},{"name":"Bessemer Process","cat":"inorganic","type":"Redox","domain":"Industrial / Materials","eq":"Si, Mn, C impurities + O₂ → SiO₂, MnO, CO₂ (removed from molten iron)","cond":"Blown air through molten pig iron","app":"Historic method for mass-producing steel from pig iron.","notes":"Largely replaced by basic oxygen steelmaking today.","discoverer":"Patented in 1856 by English inventor Henry Bessemer, who discovered that blowing air through molten pig iron burns out carbon and other impurities rapidly, enabling mass steel production for the first time."},{"name":"Electrolysis of Water","cat":"inorganic","type":"Electrolysis","domain":"Energy","eq":"2H₂O → 2H₂ + O₂","cond":"Direct current, electrolyte (e.g. dilute H₂SO₄)","app":"Hydrogen fuel production for clean-energy and fuel-cell applications.","notes":"Efficiency and renewable-electricity source determine its 'green hydrogen' credentials.","discoverer":"First demonstrated in 1800 by William Nicholson and Anthony Carlisle, just weeks after Alessandro Volta invented the electric battery, when they used Volta's new device to decompose water into hydrogen and oxygen gas."},{"name":"Neutralization Reaction","cat":"inorganic","type":"Acid-Base","domain":"Everyday / Pharma","eq":"HCl + NaOH → NaCl + H₂O","cond":"Aqueous, room temperature","app":"Basis of antacid tablets (e.g. Mg(OH)₂ + stomach acid) and pH-balancing in industry.","notes":"Exothermic; the archetypal acid-base reaction taught in introductory chemistry.","discoverer":"The general principle of acids and bases neutralizing each other was recognized qualitatively for centuries; it was placed on a modern theoretical footing by Svante Arrhenius's 1884 ionic theory of acids and bases."},{"name":"Precipitation of Silver Chloride","cat":"inorganic","type":"Double Displacement","domain":"Analytical Chemistry","eq":"AgNO₃ + NaCl → AgCl↓ + NaNO₃","cond":"Aqueous, room temperature","app":"Classic qualitative test for chloride ions; basis of photographic film chemistry.","notes":"AgCl is a white precipitate that darkens under light exposure.","discoverer":"The insolubility of silver chloride has been known since early modern chemistry; it became central to quantitative analysis after Karl Friedrich Mohr and others formalized gravimetric silver-chloride methods in the 19th century."},{"name":"Precipitation of Barium Sulfate","cat":"inorganic","type":"Double Displacement","domain":"Medical / Analytical","eq":"BaCl₂ + Na₂SO₄ → BaSO₄↓ + 2NaCl","cond":"Aqueous, room temperature","app":"BaSO₄ is used as a radiopaque contrast agent for gastrointestinal X-ray imaging.","notes":"Extremely insoluble, making ingestion of the barium ion safe despite its toxicity in soluble forms.","discoverer":"Barium sulfate's extreme insolubility was established by 19th-century analytical chemists; its use as a medical contrast agent began in the early 20th century after German radiologists recognized its safety as an insoluble barium source."},{"name":"Limewater Test for CO₂","cat":"inorganic","type":"Precipitation","domain":"Educational / Environmental","eq":"Ca(OH)₂ + CO₂ → CaCO₃↓ + H₂O","cond":"Aqueous, room temperature","app":"Standard test for carbon dioxide gas; underlies stalactite/stalagmite formation in caves.","notes":"Excess CO₂ redissolves the precipitate as soluble Ca(HCO₃)₂.","discoverer":"Formalized from Joseph Black's 1750s studies of 'fixed air' (carbon dioxide) and its reaction with limewater, foundational experiments in the discovery of gases as distinct chemical substances."},{"name":"Rusting of Iron","cat":"inorganic","type":"Redox","domain":"Everyday / Materials","eq":"4Fe + 3O₂ + 6H₂O → 4Fe(OH)₃ (→ Fe₂O₃·xH₂O)","cond":"Ambient moisture and oxygen","app":"Governs corrosion engineering, protective coatings, and infrastructure maintenance costs.","notes":"Costs the global economy hundreds of billions of dollars annually in corrosion damage.","discoverer":"Systematically studied since the 18th century; Antoine Lavoisier's late-1700s combustion experiments first clarified that rusting is a reaction with oxygen rather than the loss of a mythical substance called phlogiston."},{"name":"Combustion of Methane","cat":"organic","type":"Combustion","domain":"Energy","eq":"CH₄ + 2O₂ → CO₂ + 2H₂O","cond":"Ignition, excess oxygen","app":"Primary reaction in natural gas heating and power generation.","notes":"Complete combustion is far cleaner than incomplete combustion, which produces toxic CO.","discoverer":"Combustion chemistry was placed on a modern footing by Antoine Lavoisier's oxygen-based experiments in the 1770s–80s, which overturned the earlier phlogiston theory of burning."},{"name":"Combustion of Octane","cat":"organic","type":"Combustion","domain":"Energy","eq":"2C₈H₁₈ + 25O₂ → 16CO₂ + 18H�2O","cond":"Spark ignition, gasoline engine","app":"Powers internal combustion engines in most gasoline vehicles.","notes":"Incomplete combustion in engines contributes to smog-forming pollutants.","discoverer":"Understood through the same Lavoisier-era oxygen theory of combustion, later refined for hydrocarbon fuels as the petroleum and automotive industries developed in the late 19th and early 20th centuries."},{"name":"Fischer Esterification","cat":"organic","type":"Condensation","domain":"Industrial / Food","eq":"RCOOH + R'OH ⇌ RCOOR' + H₂O","cond":"Acid catalyst (H₂SO₄), heat","app":"Synthesizes esters used as flavorings, fragrances, and solvents.","notes":"An equilibrium reaction; excess alcohol or water removal drives yield.","discoverer":"Developed by German chemist Emil Fischer together with Arthur Speier in 1895, who found that mixing a carboxylic acid and alcohol with a strong acid catalyst gives a convenient, general route to esters."},{"name":"Saponification","cat":"organic","type":"Hydrolysis","domain":"Everyday / Industrial","eq":"Fat/Oil (triglyceride) + 3NaOH → Glycerol + 3 Soap (RCOONa)","cond":"Aqueous NaOH, heat","app":"The basis of traditional soap-making from fats and lye.","notes":"Base-catalyzed and irreversible, unlike acid-catalyzed esterification.","discoverer":"Soap-making by treating fats with alkali dates back millennia (recorded by the Babylonians); the chemistry was formalized by Michel-Eugène Chevreul in the early 1800s, who characterized fatty acids and glycerol as the products of fat hydrolysis."},{"name":"Transesterification (Biodiesel)","cat":"organic","type":"Substitution","domain":"Energy / Environmental","eq":"Triglyceride + 3CH₃OH → Glycerol + 3 Fatty Acid Methyl Esters","cond":"Base catalyst (NaOH/KOH), mild heat","app":"Industrial production of biodiesel from vegetable oils and waste cooking oil.","notes":"A key renewable-fuel reaction studied in green chemistry.","discoverer":"The base-catalyzed transesterification of vegetable oils was first reported in the 1850s, but its modern use as a biodiesel production method was developed and popularized starting in the 1980s amid growing interest in renewable fuels."},{"name":"Grignard Reaction","cat":"organic","type":"Addition","domain":"Pharmaceutical / Research","eq":"RMgX + R'CHO → R-CH(OH)-R' (after aqueous workup)","cond":"Anhydrous ether solvent, inert atmosphere","app":"Forms carbon–carbon bonds in the synthesis of complex alcohols for drug and fine-chemical synthesis.","notes":"Grignard reagents are extremely water- and air-sensitive.","discoverer":"Discovered in 1900 by French chemist Victor Grignard, who found that magnesium metal reacts with alkyl halides in dry ether to form highly reactive organomagnesium reagents; he won the 1912 Nobel Prize for the work."},{"name":"Wurtz Reaction","cat":"organic","type":"Coupling","domain":"Research","eq":"2R-X + 2Na → R-R + 2NaX","cond":"Dry ether, sodium metal","app":"Classic method for forming symmetric alkanes by coupling two alkyl halides.","notes":"Limited to symmetric products and primary halides in practice.","discoverer":"Discovered in 1855 by French chemist Charles Adolphe Wurtz, who found that treating alkyl halides with sodium metal couples them into larger symmetric alkanes."},{"name":"Friedel–Crafts Alkylation","cat":"organic","type":"Substitution","domain":"Industrial / Materials","eq":"C₆H₆ + RCl → C₆H₅R + HCl","cond":"AlCl₃ catalyst (Lewis acid)","app":"Introduces alkyl groups onto aromatic rings for detergent and polymer intermediates.","notes":"Prone to over-alkylation and carbocation rearrangement side reactions.","discoverer":"Discovered in 1877 by French chemist Charles Friedel and American chemist James Mason Crafts, working together in Paris, who found that aluminium chloride catalyzes the attachment of alkyl groups to aromatic rings."},{"name":"Friedel–Crafts Acylation","cat":"organic","type":"Substitution","domain":"Pharmaceutical / Industrial","eq":"C₆H₆ + RCOCl → C₆H₅COR + HCl","cond":"AlCl₃ catalyst (Lewis acid)","app":"Key step in synthesizing aromatic ketones for fragrances and pharmaceuticals.","notes":"Avoids the rearrangement issues seen in Friedel-Crafts alkylation.","discoverer":"Discovered in the same 1877 collaboration between Charles Friedel and James Mason Crafts, who found their aluminium-chloride catalyst also promotes attachment of acyl groups to benzene rings."},{"name":"Diels–Alder Reaction","cat":"organic","type":"Cycloaddition","domain":"Pharmaceutical / Research","eq":"Diene + Dienophile → Cyclohexene derivative","cond":"Heat or Lewis acid catalyst, often solvent-free","app":"Widely used to build six-membered rings in natural product and drug synthesis.","notes":"A [4+2] cycloaddition; won Diels and Alder the 1950 Nobel Prize.","discoverer":"Discovered in 1928 by German chemists Otto Diels and his student Kurt Alder, who found that dienes and alkenes could combine directly into six-membered rings; the pair won the 1950 Nobel Prize in Chemistry for the discovery."},{"name":"Aldol Condensation","cat":"organic","type":"Condensation","domain":"Pharmaceutical / Industrial","eq":"2 CH₃CHO → CH₃CH(OH)CH₂CHO (aldol) → CH₃CH=CHCHO + H₂O","cond":"Dilute base or acid catalyst","app":"Forms carbon-carbon bonds to build larger molecules in fragrance and pharmaceutical synthesis.","notes":"Named for the aldehyde + alcohol functional groups in the initial product.","discoverer":"Independently discovered in 1872 by Charles-Adolphe Wurtz and Alexander Borodin (also a noted composer), both observing that aldehydes could self-condense under basic or acidic conditions."},{"name":"Cannizzaro Reaction","cat":"organic","type":"Redox","domain":"Industrial","eq":"2 PhCHO + NaOH → PhCH₂OH + PhCOONa","cond":"Concentrated base, no alpha-hydrogens on aldehyde","app":"Disproportionation reaction used industrially for aldehydes lacking alpha hydrogens.","notes":"One molecule is oxidized while another is simultaneously reduced.","discoverer":"Discovered in 1853 by Italian chemist Stanislao Cannizzaro, who found that benzaldehyde treated with concentrated base disproportionates into benzyl alcohol and benzoic acid rather than undergoing a normal aldol reaction."},{"name":"Williamson Ether Synthesis","cat":"organic","type":"Substitution","domain":"Pharmaceutical / Research","eq":"R-O⁻ Na⁺ + R'-X → R-O-R' + NaX","cond":"Alkoxide base, SN2 conditions","app":"The standard method for synthesizing unsymmetrical ethers.","notes":"Works best with primary alkyl halides to avoid competing elimination.","discoverer":"Discovered in 1850 by British chemist Alexander Williamson, who reacted sodium alkoxides with alkyl halides to deliberately synthesize ethers, providing key evidence for the modern structural theory of organic molecules."},{"name":"Markovnikov Addition","cat":"organic","type":"Addition","domain":"Industrial","eq":"CH₃-CH=CH₂ + HBr → CH₃-CHBr-CH₃","cond":"Room temperature, polar conditions","app":"Predicts regiochemistry in industrial hydrohalogenation of alkenes.","notes":"Halogen adds to the more substituted carbon via the more stable carbocation.","discoverer":"Formulated in 1869 by Russian chemist Vladimir Markovnikov, who observed a consistent regiochemical pattern when hydrogen halides add across asymmetric alkenes and stated it as a general rule."},{"name":"Anti-Markovnikov Addition (Peroxide Effect)","cat":"organic","type":"Addition","domain":"Research","eq":"CH₃-CH=CH₂ + HBr → CH₃-CH₂-CH₂Br","cond":"Peroxide initiator, radical mechanism","app":"Used when the opposite regiochemistry to Markovnikov addition is synthetically required.","notes":"Proceeds via a radical chain mechanism rather than carbocation intermediate.","discoverer":"Discovered in 1933 by American chemists Morris Selig Kharasch and Frank Mayo, who found that trace peroxide contamination in old samples of allyl bromide was flipping the expected regiochemistry via a radical mechanism."},{"name":"Hydroboration–Oxidation","cat":"organic","type":"Addition","domain":"Pharmaceutical / Research","eq":"R-CH=CH₂ + BH₃ → then H₂O₂/NaOH → R-CH₂-CH₂-OH","cond":"THF solvent, then oxidative workup","app":"Delivers anti-Markovnikov alcohols important in fine chemical synthesis.","notes":"Proceeds with syn addition and no carbocation rearrangement.","discoverer":"Discovered in the late 1950s by American chemist Herbert C. Brown, who developed borane addition to alkenes as a mild, anti-Markovnikov route to alcohols; he shared the 1979 Nobel Prize in Chemistry for the work."},{"name":"Ozonolysis of Alkenes","cat":"organic","type":"Oxidative Cleavage","domain":"Research / Analytical","eq":"R₂C=CR₂ + O₃ → then Zn/H₂O → 2 R₂C=O","cond":"O₃ gas, then reductive workup","app":"Used to cleave double bonds for structural analysis and targeted synthesis of carbonyls.","notes":"An oxidative work-up instead gives carboxylic acids rather than aldehydes/ketones.","discoverer":"Developed through early 20th-century studies of ozone's reactivity with unsaturated compounds; Christian Friedrich Schönbein first characterized ozone's identity in 1839, and Harries systematized its cleavage of double bonds in the early 1900s."},{"name":"Haloform Reaction","cat":"organic","type":"Oxidative Cleavage","domain":"Analytical","eq":"CH₃COR + 3X₂ + 4NaOH → CHX₃↓ + RCOONa + 3NaX + 3H₂O","cond":"Halogen + base, methyl ketone substrate","app":"Classic qualitative test for methyl ketones (iodoform test).","notes":"Produces a characteristic yellow precipitate of iodoform (CHI₃).","discoverer":"Studied and formalized through 19th-century organic chemistry; the iodoform variant became a standard qualitative laboratory test for methyl ketones and secondary alcohols by the late 1800s."},{"name":"Kolbe Electrolysis","cat":"organic","type":"Redox","domain":"Industrial / Research","eq":"2RCOO⁻ → R-R + 2CO₂ + 2e⁻","cond":"Electrolysis of carboxylate salt solution","app":"Industrial route to long-chain alkanes for specialty chemical synthesis.","notes":"A radical decarboxylative coupling occurring at the anode.","discoverer":"Discovered in 1849 by German chemist Hermann Kolbe, who found that electrolyzing solutions of carboxylate salts produces hydrocarbons via a radical decarboxylation mechanism at the anode."},{"name":"Wacker Process","cat":"organic","type":"Oxidation","domain":"Industrial","eq":"CH₂=CH₂ + ½O₂ → CH₃CHO","cond":"PdCl₂/CuCl₂ catalyst, water","app":"Industrial route from ethylene to acetaldehyde, a key chemical feedstock.","notes":"One of the first major homogeneous catalytic industrial processes.","discoverer":"Developed in 1959 by chemists at Wacker Chemie in Germany, who discovered that palladium(II) chloride with a copper(II) chloride co-catalyst could convert ethylene directly into acetaldehyde using atmospheric oxygen."},{"name":"Nitration of Benzene","cat":"organic","type":"Substitution","domain":"Industrial / Materials","eq":"C₆H₆ + HNO₃ → C₆H₅NO₂ + H₂O","cond":"Concentrated H₂SO₄ catalyst","app":"First step in producing aniline dyes, explosives (TNT precursors), and pharmaceuticals.","notes":"An electrophilic aromatic substitution using the nitronium ion (NO₂⁺).","discoverer":"Aromatic nitration was studied extensively through the 19th century as coal-tar chemistry developed; its electrophilic aromatic substitution mechanism (via the nitronium ion) was clarified in the 1940s by Christopher Ingold and colleagues."},{"name":"Sulfonation of Benzene","cat":"organic","type":"Substitution","domain":"Industrial","eq":"C₆H₆ + SO₃ → C₆H₅SO₃H","cond":"Fuming sulfuric acid (oleum)","app":"Produces sulfonic acids used in detergents and dye intermediates.","notes":"A reversible electrophilic aromatic substitution.","discoverer":"Studied since the mid-19th century alongside nitration as part of the emerging coal-tar dye industry, providing key intermediates for the synthetic dyes pioneered by William Perkin and others."},{"name":"Reduction of Nitrobenzene to Aniline","cat":"organic","type":"Reduction","domain":"Industrial / Pharmaceutical","eq":"C₆H₅NO₂ + 3H₂ → C₆H₅NH₂ + 2H₂O","cond":"Fe/HCl or catalytic H₂ (Pd/Pt)","app":"Key industrial step for dye, rubber-chemical, and pharmaceutical synthesis.","notes":"Historically performed with iron/acid (Bechamp reduction).","discoverer":"First achieved in 1842 by Russian chemist Nikolai Zinin, who reduced nitrobenzene to aniline using ammonium sulfide; the iron/acid version was later developed by Antoine Béchamp in 1854 for industrial-scale use."},{"name":"Polymerization of Ethylene","cat":"organic","type":"Polymerization","domain":"Materials","eq":"n CH₂=CH₂ → -(CH₂-CH₂)ₙ-","cond":"High pressure/radical or Ziegler-Natta catalyst","app":"Produces polyethylene, the most widely used plastic in the world.","notes":"Different catalysts yield HDPE, LDPE, and LLDPE with different properties.","discoverer":"Discovered by accident in 1933 by Eric Fawcett and Reginald Gibson at ICI in Britain, who found a waxy white solid had formed in a high-pressure ethylene reaction vessel after an oxygen leak; commercial production began in 1939."},{"name":"Vulcanization of Rubber","cat":"organic","type":"Cross-linking","domain":"Materials / Industrial","eq":"Rubber polymer + S₈ → cross-linked rubber (sulfur bridges)","cond":"Heat, sulfur, accelerator","app":"Converts soft natural rubber into durable material for tires and industrial goods.","notes":"Discovered accidentally by Charles Goodyear in 1839.","discoverer":"Discovered by accident in 1839 by American inventor Charles Goodyear, who spilled a rubber-sulfur mixture on a hot stove and found the resulting material was durable and heat-resistant rather than melting."},{"name":"Aspirin Synthesis (Acetylation)","cat":"organic","type":"Substitution","domain":"Pharmaceutical","eq":"Salicylic acid + (CH₃CO)₂O → Aspirin + CH₃COOH","cond":"H₃PO₄ or H₂SO₄ catalyst, mild heat","app":"Industrial and laboratory synthesis of acetylsalicylic acid (aspirin).","notes":"One of the most-produced pharmaceutical compounds in history.","discoverer":"Synthesized in stable, pure form in 1897 by Felix Hoffmann, a chemist at Bayer in Germany, who acetylated salicylic acid to reduce its harsh stomach-irritating side effects; it was marketed from 1899."},{"name":"Photosynthesis (Light Reactions Overview)","cat":"organic","type":"Redox","domain":"Biological","eq":"6CO₂ + 6H₂O + light → C₆H₁₂O₆ + 6O₂","cond":"Chlorophyll, sunlight, chloroplast","app":"The foundational reaction sustaining nearly all life on Earth via primary production.","notes":"Actually a complex multi-step process; this is the net overall equation.","discoverer":"Its basic chemistry was pieced together over two centuries, from Joseph Priestley's 1770s observations that plants 'restore' air, through Jan Ingenhousz's discovery that light is required, to Melvin Calvin's mapping of the carbon-fixation pathway in the 1950s (Nobel Prize 1961)."},{"name":"Cellular Respiration","cat":"organic","type":"Redox","domain":"Biological","eq":"C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + energy (ATP)","cond":"Mitochondria, enzymatic pathway","app":"The core energy-generating pathway in aerobic organisms.","notes":"The reverse net reaction of photosynthesis, closing the carbon cycle.","discoverer":"Its chemistry was clarified through 19th- and 20th-century biochemistry, notably Hans Krebs's 1937 discovery of the citric acid cycle, for which he shared the 1953 Nobel Prize in Physiology or Medicine."},{"name":"Alcoholic Fermentation","cat":"organic","type":"Redox","domain":"Biological / Food","eq":"C₆H₁₂O₆ → 2C₂H₅OH + 2CO₂","cond":"Yeast enzymes, anaerobic","app":"Basis of brewing, winemaking, and bread-leavening industries.","notes":"An ancient biotechnology exploited for millennia before its chemistry was understood.","discoverer":"Its biological basis (rather than a purely chemical process) was established by Louis Pasteur in the 1850s–60s, who showed that living yeast cells, not spontaneous chemistry, drive the conversion of sugar to alcohol."},{"name":"Lactic Acid Fermentation","cat":"organic","type":"Redox","domain":"Biological / Food","eq":"C₆H₁₂O₆ → 2 CH₃CH(OH)COOH","cond":"Bacterial enzymes, anaerobic","app":"Produces yogurt, sauerkraut, and other fermented foods; also occurs in muscle during exertion.","notes":"Builds up in muscle tissue during intense anaerobic exercise.","discoverer":"First isolated and studied by Swedish chemist Carl Wilhelm Scheele in 1780, who identified lactic acid in sour milk; its microbial fermentation origin was later established by Louis Pasteur."},{"name":"Ozone Layer Depletion (CFC Reaction)","cat":"inorganic","type":"Radical Chain","domain":"Environmental","eq":"CFCl₃ + UV → Cl• + •CFCl₂; Cl• + O₃ → ClO• + O₂","cond":"Stratospheric UV radiation","app":"Explains CFC-driven ozone depletion, motivating the Montreal Protocol.","notes":"A single chlorine radical can destroy tens of thousands of ozone molecules catalytically.","discoverer":"The mechanism was proposed in 1974 by Mario Molina and F. Sherwood Rowland, who calculated that chlorine from CFCs could catalytically destroy stratospheric ozone; they shared the 1995 Nobel Prize in Chemistry for the work."},{"name":"Photochemical Smog Formation","cat":"inorganic","type":"Radical Chain","domain":"Environmental","eq":"NO₂ + sunlight → NO + O•; O• + O₂ → O₃","cond":"Sunlight, urban air with NOx/VOCs","app":"Explains ground-level ozone and smog formation in polluted cities.","notes":"VOCs from vehicle exhaust accelerate the radical cycle.","discoverer":"The mechanism was worked out in the 1950s by American chemist Arie Haagen-Smit, who identified ozone and other photochemical oxidants as the cause of Los Angeles smog, tracing it to vehicle exhaust reacting in sunlight."},{"name":"Acid Rain Formation","cat":"inorganic","type":"Redox / Acid-Base","domain":"Environmental","eq":"SO₂ + H₂O + ½O₂ → H₂SO₄","cond":"Atmospheric moisture and oxygen","app":"Explains acidification of rainfall from industrial sulfur emissions.","notes":"Damages forests, lakes, and limestone/marble structures over time.","discoverer":"Its chemistry was first described in 1852 by Scottish chemist Robert Angus Smith, who coined the term 'acid rain' while studying industrial pollution around Manchester, England."},{"name":"Baking Soda + Vinegar","cat":"inorganic","type":"Acid-Base","domain":"Everyday","eq":"NaHCO₃ + CH₃COOH → CH₃COONa + H₂O + CO₂","cond":"Room temperature, aqueous","app":"Classic kitchen-science demonstration and a component of some leavening/cleaning applications.","notes":"The fizzing is CO₂ gas rapidly escaping solution.","discoverer":"A folk-chemistry demonstration rather than a formal discovery; its underlying acid-carbonate chemistry follows the same principles established for effervescence reactions by 18th-century pneumatic chemists like Joseph Black."},{"name":"Antacid Reaction (Milk of Magnesia)","cat":"inorganic","type":"Acid-Base","domain":"Pharmaceutical / Everyday","eq":"Mg(OH)₂ + 2HCl → MgCl₂ + 2H₂O","cond":"Stomach acid environment","app":"Neutralizes excess stomach acid to relieve heartburn and indigestion.","notes":"Many antacids use aluminium or calcium hydroxide/carbonate similarly.","discoverer":"Magnesium hydroxide suspension was popularized as an antacid and laxative by Charles Henry Phillips, who patented 'Milk of Magnesia' in 1873."},{"name":"Electrolysis of Brine","cat":"inorganic","type":"Electrolysis","domain":"Industrial","eq":"2NaCl + 2H₂O → Cl₂ + H₂ + 2NaOH","cond":"Electrolysis, chlor-alkali membrane cell","app":"Industrial-scale production of chlorine gas, hydrogen, and caustic soda.","notes":"Same net reaction as the chlor-alkali process listed above, shown for its role in electrochemistry.","discoverer":"The chlor-alkali principle follows from Michael Faraday's 1830s laws of electrolysis; industrial-scale electrolytic brine processing began in the 1890s as reliable direct-current generators became available."},{"name":"Formation of Stalactites","cat":"inorganic","type":"Equilibrium / Precipitation","domain":"Environmental / Geological","eq":"Ca(HCO₃)₂ → CaCO₃↓ + H₂O + CO₂","cond":"Slow evaporation, cave environment","app":"Explains natural stalactite and stalagmite growth in limestone caves over millennia.","notes":"The reverse reaction (CaCO₃ + CO₂ + H₂O → Ca(HCO₃)₂) is what dissolves limestone initially.","discoverer":"The chemistry of cave formation through carbonate dissolution and re-precipitation was outlined in the 18th century as geologists began systematically studying karst limestone landscapes."},{"name":"Iron + Copper Sulfate Displacement","cat":"inorganic","type":"Single Displacement","domain":"Educational / Industrial","eq":"Fe + CuSO₄ → FeSO₄ + Cu","cond":"Aqueous, room temperature","app":"Classic reactivity-series demonstration; underlies cementation copper recovery in mining.","notes":"Iron is more reactive than copper, so it displaces Cu²⁺ from solution.","discoverer":"A classic reactivity-series demonstration formalized through 18th- and 19th-century studies of metal displacement reactions that helped establish the concept of an activity series."},{"name":"Zinc + Hydrochloric Acid","cat":"inorganic","type":"Single Displacement","domain":"Educational / Industrial","eq":"Zn + 2HCl → ZnCl₂ + H₂","cond":"Aqueous, room temperature","app":"Standard laboratory method for generating hydrogen gas.","notes":"Reaction rate increases with acid concentration and surface area (e.g., zinc dust vs. granules).","discoverer":"The reaction of metals with acids to release 'inflammable air' was first clearly documented by Henry Cavendish in 1766, in the same experiments that led him to identify hydrogen gas."},{"name":"Thermal Decomposition of Calcium Carbonate","cat":"inorganic","type":"Decomposition","domain":"Industrial","eq":"CaCO₃ → CaO + CO₂","cond":"Heat (~900°C, calcination)","app":"Produces quicklime (CaO) for cement, steelmaking flux, and water treatment.","notes":"One of the largest sources of industrial CO₂ emissions after fossil fuel combustion.","discoverer":"Studied by Joseph Black in the 1750s, whose experiments heating limestone (calcining it to quicklime and 'fixed air') were foundational to the modern understanding of gases as chemically distinct substances."},{"name":"Slaking of Lime","cat":"inorganic","type":"Synthesis","domain":"Industrial / Construction","eq":"CaO + H₂O → Ca(OH)₂","cond":"Exothermic, addition of water","app":"Produces slaked lime used in mortar, plaster, and water/soil treatment.","notes":"Highly exothermic; can boil the water it's added to.","discoverer":"Known and used since antiquity in mortar-making; its chemistry was clarified alongside Joseph Black's 18th-century studies of lime and carbonate chemistry."},{"name":"Formation of Ammonium Chloride Smoke","cat":"inorganic","type":"Synthesis","domain":"Educational","eq":"NH₃(g) + HCl(g) → NH₄Cl(s)","cond":"Gas-phase mixing at room temperature","app":"Classic demonstration of gas-phase reaction producing visible white smoke.","notes":"Used to visualize diffusion rates of gases in classroom experiments.","discoverer":"A long-standing classroom demonstration; ammonium chloride's formation from ammonia and hydrogen chloride gases was documented by early pneumatic chemists studying gas-phase reactions in the 18th century."},{"name":"Iodine Clock Reaction","cat":"inorganic","type":"Redox / Kinetics","domain":"Educational / Research","eq":"IO₃⁻ + 3HSO₃⁻ → I⁻ + 3SO₄²⁻ + 3H⁺ (then I⁻ + IO₃⁻ + 6H⁺ → 3I₂ + 3H₂O with starch indicator)","cond":"Aqueous, room temperature","app":"Classic kinetics demonstration showing a sudden color change after a delay.","notes":"Used to teach reaction rate laws and mechanism intermediates.","discoverer":"First described in 1886 by German chemist Hans Heinrich Landolt, who used the sudden, delayed color change to study and measure reaction rates quantitatively."},{"name":"Coordination Complex Formation (Copper-Ammonia)","cat":"inorganic","type":"Coordination","domain":"Analytical / Educational","eq":"Cu²⁺ + 4NH₃ → [Cu(NH₃)₄]²⁺","cond":"Aqueous ammonia, excess","app":"Classic test for copper(II) ions, producing a deep blue complex.","notes":"Demonstrates Lewis acid-base coordination chemistry and ligand field color changes.","discoverer":"Coordination chemistry was placed on a rigorous theoretical footing by Swiss chemist Alfred Werner starting in 1893, who correctly deduced the three-dimensional bonding structure of metal-ammine complexes and won the 1913 Nobel Prize in Chemistry."},{"name":"EDTA Chelation Titration","cat":"inorganic","type":"Coordination","domain":"Analytical / Medical","eq":"M²⁺ + EDTA⁴⁻ → [M(EDTA)]²⁻","cond":"Buffered aqueous solution, indicator dye","app":"Used to determine water hardness and treat heavy-metal poisoning (chelation therapy).","notes":"EDTA forms extremely stable 1:1 complexes with most divalent and trivalent metal ions.","discoverer":"EDTA was first synthesized in 1935 by German chemist Ferdinand Münz; its use in quantitative complexometric titration was developed in the 1940s–50s by Swiss chemist Gerold Schwarzenbach."},{"name":"Formation of Prussian Blue","cat":"inorganic","type":"Coordination / Precipitation","domain":"Materials / Analytical","eq":"Fe³⁺ + [Fe(CN)₆]⁴⁻ → Fe₄[Fe(CN)₆]₃↓","cond":"Aqueous, room temperature","app":"Historic blue pigment; still used as an antidote for radioactive cesium/thallium poisoning.","notes":"One of the first synthetic pigments, discovered accidentally in 1706.","discoverer":"Discovered by accident around 1706 by Berlin pigment-maker Johann Jacob Diesbach, who was attempting to make a red pigment using contaminated potash and instead produced a deep blue precipitate — one of the first synthetic pigments in history."},{"name":"Nuclear Fission of Uranium-235","cat":"inorganic","type":"Nuclear","domain":"Energy","eq":"²³⁵U + n → ¹⁴¹Ba + ⁹²Kr + 3n + energy","cond":"Neutron bombardment, critical mass","app":"Powers nuclear reactors for electricity generation.","notes":"Products vary; this is one common fission pathway among many possible outcomes.","discoverer":"Discovered in 1938 by German chemists Otto Hahn and Fritz Strassmann, who found barium among the products of neutron-bombarded uranium; physicist Lise Meitner and her nephew Otto Frisch correctly interpreted the result as nuclear fission in early 1939."},{"name":"Radioactive Decay of Carbon-14","cat":"inorganic","type":"Nuclear","domain":"Environmental / Analytical","eq":"¹⁴C → ¹⁴N + β⁻","cond":"Spontaneous, half-life ≈5,730 years","app":"Basis of radiocarbon dating for archaeological and geological samples.","notes":"Beta decay converts a neutron to a proton, changing the element identity.","discoverer":"Carbon-14 was discovered in 1940 by Martin Kamen and Sam Ruben; its use for dating organic material was developed by Willard Libby starting in 1946, work for which he won the 1960 Nobel Prize in Chemistry."},{"name":"Esterification for Fragrance (Isoamyl Acetate)","cat":"organic","type":"Condensation","domain":"Food / Fragrance","eq":"CH₃COOH + (CH₃)₂CHCH₂CH₂OH → CH₃COOCH₂CH₂CH(CH₃)₂ + H₂O","cond":"Acid catalyst, heat","app":"Produces the characteristic banana-flavor ester used in food and fragrance industries.","notes":"A textbook example connecting ester structure directly to a recognizable scent.","discoverer":"A direct application of Fischer esterification (Emil Fischer and Arthur Speier, 1895) to a specific fragrance/flavor compound, widely used in teaching labs to connect ester structure to scent."},{"name":"Claisen Condensation","cat":"organic","type":"Condensation","domain":"Pharmaceutical / Research","eq":"2 CH₃COOC₂H₅ → CH₃COCH₂COOC₂H₅ + C₂H₅OH","cond":"Strong base (NaOEt), anhydrous","app":"Forms carbon-carbon bonds between esters, key in fatty acid biosynthesis and drug synthesis.","notes":"Mechanistically related to the biological Claisen-type condensations in fatty acid synthase.","discoverer":"Discovered in 1887 by German chemist Rainer Ludwig Claisen, who found that esters with alpha-hydrogens could condense with each other under strong base to form beta-keto esters."},{"name":"Perkin Reaction","cat":"organic","type":"Condensation","domain":"Industrial / Historical","eq":"ArCHO + (RCH₂CO)₂O → ArCH=CHCOOH","cond":"Base catalyst (acetate salt), heat","app":"Historic route to cinnamic acid derivatives used in fragrance and dye synthesis.","notes":"William Perkin's related work on aniline dyes launched the synthetic dye industry.","discoverer":"Discovered in 1868 by British chemist William Henry Perkin (already famous for accidentally discovering the first synthetic dye, mauveine, in 1856), who found that aromatic aldehydes condense with acid anhydrides under basic catalysis."},{"name":"Etard Reaction","cat":"organic","type":"Oxidation","domain":"Research","eq":"C₆H₅CH₃ + CrO₂Cl₂ → C₆H₅CHO (after hydrolysis)","cond":"Chromyl chloride, then hydrolysis","app":"Selective oxidation of a toluene methyl group directly to an aldehyde.","notes":"Avoids over-oxidation to the carboxylic acid seen with stronger oxidants.","discoverer":"Discovered in 1881 by French chemist Alexandre Etard, who found that chromyl chloride selectively oxidizes the methyl group of toluene-type compounds to an aldehyde."},{"name":"Sandmeyer Reaction","cat":"organic","type":"Substitution","domain":"Pharmaceutical / Industrial","eq":"ArN₂⁺ + CuX → ArX + N₂","cond":"Copper(I) halide catalyst","app":"Installs halogens onto aromatic rings via diazonium intermediates, key in dye and drug synthesis.","notes":"Also used to introduce CN, OH, and other groups via analogous Cu-mediated pathways.","discoverer":"Discovered in 1884 by Swiss chemist Traugott Sandmeyer, who found that copper(I) salts catalyze the replacement of a diazonium group on an aromatic ring with a halogen."},{"name":"Hofmann Elimination","cat":"organic","type":"Elimination","domain":"Research","eq":"R-CH₂-CH₂-N(CH₃)₃⁺ OH⁻ → R-CH=CH₂ + N(CH₃)₃ + H₂O","cond":"Heat, hydroxide base","app":"Used in alkaloid structure determination and synthesis of less-substituted alkenes.","notes":"Gives the opposite regiochemical preference (Hofmann product) to Zaitsev elimination.","discoverer":"Discovered in 1851 by German chemist August Wilhelm von Hofmann, who found that exhaustively methylating an amine and heating the resulting ammonium hydroxide gives a distinctive, less-substituted alkene product."},{"name":"Zaitsev (Saytzeff) Elimination","cat":"organic","type":"Elimination","domain":"Research / Industrial","eq":"CH₃CH₂CHBrCH₃ + KOH(alc) → CH₃CH=CHCH₃ (major) + HBr","cond":"Alcoholic KOH, heat","app":"Predicts the more substituted (more stable) alkene as the major elimination product.","notes":"Competes with Hofmann-type elimination depending on base bulk and substrate.","discoverer":"Formulated in 1875 by Russian chemist Alexander Zaitsev, who proposed the general rule that base-induced elimination reactions favor the more highly substituted (more stable) alkene as the major product."}]</script>
+<script>
+(function(){
+"use strict";
+
+const CURATED = JSON.parse(document.getElementById('curated-data').textContent);
+
+/* ============ THEME ============ */
+const root = document.documentElement;
+const themeBtn = document.getElementById('themeToggle');
+function iconMoon(){return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';}
+function iconSun(){return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>';}
+let theme='dark';
+try{ theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark'; }catch(e){}
+function applyTheme(){ if(theme==='light'){root.classList.add('light'); themeBtn.innerHTML=iconMoon();} else {root.classList.remove('light'); themeBtn.innerHTML=iconSun();} }
+applyTheme();
+themeBtn.addEventListener('click', ()=>{ theme = theme==='dark'?'light':'dark'; applyTheme(); });
+
+/* ============ CHEMISTRY HELPERS ============ */
+const PREFIXES = ["","meth","eth","prop","but","pent","hex","hept","oct","non","dec","undec","dodec","tridec","tetradec","pentadec","hexadec","heptadec","octadec","nonadec","icos"];
+function chainName(n){ return (n>=1 && n<=20) ? PREFIXES[n] : `C${n}-chain`; }
+function alkylFormula(n){ return `C${n}H${2*n+1}`; }
+function alkeneFormula(n){ return `C${n}H${2*n}`; }
+function chainSizeClass(n){
+  if(n<=4) return "short-chain — typical of solvents, refrigerant feedstocks, and lab reagents";
+  if(n<=11) return "medium-chain — typical of fuels, plasticizers, and specialty solvents";
+  if(n<=18) return "long-chain — typical of surfactants, detergents, and personal-care emulsifiers";
+  if(n<=30) return "very long-chain — typical of waxes, lubricant additives, and polymer components";
+  return "ultra-long-chain — typical of specialty polymer and materials-science research";
+}
+
+/* ============ COMBINATORIAL FAMILIES ============ */
+const HALOGENS = [{v:"F",name:"Fluorine"},{v:"Cl",name:"Chlorine"},{v:"Br",name:"Bromine"},{v:"I",name:"Iodine"}];
+const NUCLEOPHILES = [
+  {v:"OH", label:"Hydroxide (OH⁻)", reagent:"NaOH", group:"OH", type:"alcohol"},
+  {v:"CN", label:"Cyanide (CN⁻)", reagent:"NaCN", group:"CN", type:"nitrile"},
+  {v:"OEt", label:"Alkoxide (OR⁻)", reagent:"NaOEt", group:"OEt", type:"ether"},
+  {v:"N3", label:"Azide (N₃⁻)", reagent:"NaN₃", group:"N₃", type:"alkyl azide"},
+  {v:"SH", label:"Hydrosulfide (SH⁻)", reagent:"NaSH", group:"SH", type:"thiol"},
+  {v:"I", label:"Iodide (I⁻)", reagent:"NaI", group:"I", type:"alkyl iodide (halide exchange)"},
+  {v:"NH3", label:"Ammonia (NH₃)", reagent:"NH₃", group:"NH₂", type:"primary amine"},
+  {v:"OAc", label:"Acetate (CH₃COO⁻)", reagent:"CH₃COONa", group:"OOCCH₃", type:"ester"},
+  {v:"SCN", label:"Thiocyanate (SCN⁻)", reagent:"NaSCN", group:"SCN", type:"thiocyanate"},
+  {v:"F", label:"Fluoride (F⁻)", reagent:"AgF", group:"F", type:"alkyl fluoride (halide exchange)"},
+];
+const MECHANISMS = ["SN1","SN2","E1","E2"];
+const SOLVENTS = ["Protic (H₂O / EtOH)","Aprotic (DMSO / acetone)","Mixed aqueous-organic"];
+const TEMPS = ["Low (0°C)","Room temp (25°C)","Reflux (~80°C)","High (150°C)","Very high (250°C+)"];
+const ISOTOPES = ["Normal substrate (¹H)","Deuterium-labeled (²H, kinetic studies)"];
+
+const ADDN_REAGENTS = [
+  {v:"H2",label:"H₂ (hydrogenation)",type:"alkane"},
+  {v:"Cl2",label:"Cl₂",type:"1,2-dichloride"},
+  {v:"Br2",label:"Br₂",type:"1,2-dibromide"},
+  {v:"I2",label:"I₂",type:"1,2-diiodide"},
+  {v:"F2",label:"F₂",type:"1,2-difluoride"},
+  {v:"HCl",label:"HCl",type:"chloroalkane (Markovnikov)"},
+  {v:"HBr",label:"HBr",type:"bromoalkane (Markovnikov)"},
+  {v:"HI",label:"HI",type:"iodoalkane (Markovnikov)"},
+  {v:"H2O",label:"H₂O / H⁺ (hydration)",type:"alcohol"},
+  {v:"HBrp",label:"HBr / peroxides (anti-Markovnikov)",type:"bromoalkane (anti-Markovnikov)"},
+];
+const ADDN_CATALYSTS = ["Pt","Pd","Ni","Lewis acid (AlCl₃)","None / thermal"];
+const ADDN_TEMPS = ["Low (0°C)","Room temp (25°C)","Reflux (~80°C)","High (150°C)"];
+const ADDN_STEREO = ["syn addition","anti addition","racemic mixture"];
+
+const ESTER_CATALYSTS = [{v:"acid",label:"H₂SO₄ (acid-catalyzed, Fischer)"},{v:"base",label:"NaOH / KOH (base-catalyzed, saponification-type)"}];
+const ESTER_DIR = [{v:"fwd",label:"Forward (esterification)"},{v:"rev",label:"Reverse (hydrolysis)"}];
+const ESTER_TEMPS = ["Room temp (25°C)","Reflux (~80°C)","High (150°C)"];
+
+const METALS = ["K","Na","Li","Ca","Mg","Al","Mn","Zn","Cr","Fe","Cd","Co","Ni","Sn","Pb","Cu","Hg","Ag","Pt","Au","Ba","Sr","Cs","Rb","Ti","V","W","Mo","Sb","Bi"];
+const REACTIVITY_RANK = {K:1,Na:2,Li:3,Ba:4,Sr:5,Ca:6,Cs:1,Rb:1,Mg:7,Al:8,Mn:9,Zn:10,Cr:11,Fe:12,Cd:13,Co:14,Ni:15,Sn:16,Pb:17,Sb:18,Bi:19,Cu:20,Hg:21,Ag:22,Pt:23,Au:24,Ti:9,V:9,W:19,Mo:19};
+const PARTNERS = ["HCl (dilute)","H₂SO₄ (dilute)","HNO₃ (dilute)","H₃PO₄ (dilute)","CH₃COOH","ZnSO₄ (aq)","CuSO₄ (aq)","AgNO₃ (aq)","FeCl₃ (aq)","FeCl₂ (aq)","Pb(NO₃)₂ (aq)","NiCl₂ (aq)","SnCl₂ (aq)","AlCl₃ (aq)","MgSO₄ (aq)","CaCl₂ (aq)","NaCl (aq)","KBr (aq)","NaI (aq)","Cl₂ (g)","Br₂ (l)","I₂ (s)","O₂ (g)","H₂O (steam)","NaOH (aq)","KOH (aq)","Na₂CO₃ (aq)","NH₄Cl (aq)","ZnCl₂ (aq)","CuCl₂ (aq)","AgCl (s)","BaCl₂ (aq)","MnSO₄ (aq)","CoCl₂ (aq)","CrCl₃ (aq)"];
+const CONCENTRATIONS = ["Dilute (~0.1 M)","Moderate (~1 M)","Concentrated (~10 M)"];
+const REDOX_TEMPS = ["Room temp (25°C)","Warm (60°C)","Hot / reflux (100°C+)"];
+
+const METAL_IONS = ["Cu²⁺","Fe²⁺","Fe³⁺","Ni²⁺","Co²⁺","Co³⁺","Zn²⁺","Cr³⁺","Mn²⁺","Ag⁺","Au³⁺","Pt²⁺","Pd²⁺","Cd²⁺","Hg²⁺","Al³⁺","Ca²⁺","Mg²⁺","Ti⁴⁺","V³⁺","Ru²⁺","Rh³⁺","Ir³⁺","Os³⁺","Sc³⁺"];
+const LIGANDS = ["NH₃","H₂O","Cl⁻","CN⁻","en (ethylenediamine)","EDTA⁴⁻","CO","OH⁻","SCN⁻","NO₂⁻","oxalate²⁻","bipyridine","phenanthroline","PPh₃","F⁻","Br⁻","I⁻","py (pyridine)","glycinate","porphyrin","acac⁻","N₃⁻","S²⁻","SO₄²⁻","edta-like macrocycle"];
+const COORD_NUM = [4,6];
+const COORD_GEOM = ["Tetrahedral","Square planar","Octahedral"];
+
+const HAL_INITIATORS = ["UV light (hν)","Peroxide initiator (ROOR)","Heat (Δ)"];
+const HAL_EQUIV = ["Mono-substitution (1 eq.)","Di-substitution (2 eq.)","Tri-substitution (3 eq.)","Poly-halogenation (excess)"];
+
+function sumRange(a,b){ let s=0; for(let i=a;i<=b;i++) s+=i; return s; }
+
+const FAMILIES = {
+  subst: {
+    label:"Alkyl Halide Substitution & Elimination",
+    domain:"organic",
+    count(){ return sumRange(1,60) * HALOGENS.length * NUCLEOPHILES.length * MECHANISMS.length * SOLVENTS.length * TEMPS.length * ISOTOPES.length; },
+    formulaText(){ return `Σ(chain 1–60, positions) × ${HALOGENS.length} halogens × ${NUCLEOPHILES.length} nucleophiles × ${MECHANISMS.length} mechanisms × ${SOLVENTS.length} solvents × ${TEMPS.length} temps × ${ISOTOPES.length} isotope labels`; },
+    params:[
+      {key:"chain", label:"Carbon chain length", type:"range", min:1, max:60, default:8},
+      {key:"position", label:"Halogen position", type:"position", of:"chain"},
+      {key:"halogen", label:"Halogen", type:"select", options:HALOGENS.map(h=>({v:h.v,label:h.name}))},
+      {key:"nuc", label:"Nucleophile / base", type:"select", options:NUCLEOPHILES.map(n=>({v:n.v,label:n.label}))},
+      {key:"mech", label:"Mechanism", type:"select", options:MECHANISMS.map(m=>({v:m,label:m}))},
+      {key:"solvent", label:"Solvent", type:"select", options:SOLVENTS.map(s=>({v:s,label:s}))},
+      {key:"temp", label:"Temperature", type:"select", options:TEMPS.map(t=>({v:t,label:t}))},
+      {key:"isotope", label:"Isotope labeling", type:"select", options:ISOTOPES.map(t=>({v:t,label:t}))},
+    ],
+    generate(v){
+      const n=parseInt(v.chain), pos=parseInt(v.position)||1;
+      const nuc = NUCLEOPHILES.find(x=>x.v===v.nuc);
+      const substrate = `${pos}-${v.halogen.toLowerCase()==="f"?"fluoro":v.halogen.toLowerCase()==="cl"?"chloro":v.halogen.toLowerCase()==="br"?"bromo":"iodo"}${chainName(n)}ane`;
+      const substrateFormula = `${alkylFormula(n)}${v.halogen}`;
+      const isElim = v.mech==="E1"||v.mech==="E2";
+      let eq, note;
+      if(isElim){
+        eq = `${substrateFormula} + ${nuc.reagent} → ${alkeneFormula(n)} (alkene) + H${v.halogen} + Na${v.halogen}`;
+        note = `${v.mech} elimination (dehydrohalogenation): the base removes a β-hydrogen as the halide leaves, forming a new C=C bond. Regiochemistry favors the more substituted (Zaitsev) alkene under most conditions.`;
+      } else {
+        eq = `${substrateFormula} + ${nuc.reagent} → ${alkylFormula(n)}${nuc.group} (${nuc.type}) + Na${v.halogen}`;
+        note = `${v.mech} substitution: the nucleophile ${v.mech==="SN2"?"attacks from the backside in a single concerted step, inverting stereochemistry":"attacks a carbocation intermediate formed after the halide leaves, often with some racemization"}.`;
+      }
+      const app = `${chainSizeClass(n)}. As a ${nuc.type}, this product class is relevant to ${nuc.type.includes('amine')?'pharmaceutical intermediate synthesis':nuc.type.includes('nitrile')?'nylon and polymer precursor chemistry':nuc.type.includes('thiol')?'rubber vulcanization and metal-chelating agents':nuc.type.includes('azide')?'click-chemistry and energetic-materials research':nuc.type.includes('ester')?'flavoring, fragrance, and plasticizer chemistry':'solvent and specialty-chemical production'}.`;
+      return {eq, cond:`${v.solvent}, ${v.temp}, ${v.isotope}`, note, app, substrate, family:"Substitution / Elimination"};
+    }
+  },
+  addn: {
+    label:"Alkene Addition Reactions",
+    domain:"organic",
+    count(){ return sumRange(1,59) * ADDN_REAGENTS.length * ADDN_CATALYSTS.length * ADDN_TEMPS.length * ADDN_STEREO.length; },
+    formulaText(){ return `Σ(chain 2–60, double-bond positions) × ${ADDN_REAGENTS.length} reagents × ${ADDN_CATALYSTS.length} catalysts × ${ADDN_TEMPS.length} temps × ${ADDN_STEREO.length} stereo outcomes`; },
+    params:[
+      {key:"chain", label:"Carbon chain length", type:"range", min:2, max:60, default:6},
+      {key:"position", label:"Double-bond position", type:"position", of:"chain", offset:-1},
+      {key:"reagent", label:"Reagent", type:"select", options:ADDN_REAGENTS.map(r=>({v:r.v,label:r.label}))},
+      {key:"catalyst", label:"Catalyst", type:"select", options:ADDN_CATALYSTS.map(c=>({v:c,label:c}))},
+      {key:"temp", label:"Temperature", type:"select", options:ADDN_TEMPS.map(t=>({v:t,label:t}))},
+      {key:"stereo", label:"Stereochemical outcome", type:"select", options:ADDN_STEREO.map(s=>({v:s,label:s}))},
+    ],
+    generate(v){
+      const n=parseInt(v.chain), pos=parseInt(v.position)||1;
+      const reagent = ADDN_REAGENTS.find(r=>r.v===v.reagent);
+      const substrate = `${pos}-${chainName(n)}ene`;
+      const eq = `${alkeneFormula(n)} (${substrate}) + ${reagent.label.split(' ')[0]} → C${n}H product (${reagent.type})`;
+      const note = `Electrophilic addition across the C=C double bond; product regiochemistry (${v.stereo}) determined by ${v.catalyst==="None / thermal"?"the uncatalyzed reaction mechanism":`the ${v.catalyst} catalyst surface/coordination`}.`;
+      const app = `${chainSizeClass(n)}. Addition chemistry at this chain length is representative of ${n<=6?'petrochemical feedstock upgrading':n<=14?'plasticizer and surfactant precursor synthesis':'specialty wax and lubricant chemistry'}.`;
+      return {eq, cond:`${v.catalyst}, ${v.temp}`, note, app, substrate, family:"Alkene Addition"};
+    }
+  },
+  ester: {
+    label:"Esterification & Hydrolysis",
+    domain:"organic",
+    count(){ return 40*40*ESTER_CATALYSTS.length*ESTER_DIR.length*ESTER_TEMPS.length; },
+    formulaText(){ return `40 acid chain lengths × 40 alcohol chain lengths × ${ESTER_CATALYSTS.length} catalysts × ${ESTER_DIR.length} directions × ${ESTER_TEMPS.length} temps`; },
+    params:[
+      {key:"acidChain", label:"Acid chain length", type:"range", min:1, max:40, default:2},
+      {key:"alcChain", label:"Alcohol chain length", type:"range", min:1, max:40, default:2},
+      {key:"catalyst", label:"Catalyst", type:"select", options:ESTER_CATALYSTS},
+      {key:"dir", label:"Direction", type:"select", options:ESTER_DIR},
+      {key:"temp", label:"Temperature", type:"select", options:ESTER_TEMPS.map(t=>({v:t,label:t}))},
+    ],
+    generate(v){
+      const a=parseInt(v.acidChain), b=parseInt(v.alcChain);
+      const acidF = `C${a}H${2*a+1}COOH`, alcF = `C${b}H${2*b+1}OH`, esterF = `C${a}H${2*a+1}COOC${b}H${2*b+1}`;
+      const fwd = v.dir==="fwd";
+      const eq = fwd ? `${acidF} + ${alcF} ⇌ ${esterF} + H₂O` : `${esterF} + H₂O ⇌ ${acidF} + ${alcF}`;
+      const note = fwd ? `Fischer-type esterification: acid-catalyzed nucleophilic acyl substitution, equilibrium-limited, driven forward by excess alcohol or water removal.` : `Ester hydrolysis: reverse of esterification; base catalysis (saponification) makes this step irreversible by trapping the carboxylate anion.`;
+      const app = `${chainSizeClass(a)} acid with ${chainSizeClass(b)} alcohol. Ester products in this range span ${(a+b)<=8?'food flavoring and fragrance compounds':(a+b)<=30?'plasticizers and lubricant esters':'biodiesel-range fatty acid esters and wax esters'}.`;
+      return {eq, cond:`${v.catalyst.label||v.catalyst}, ${v.temp}`, note, app, substrate:`C${a} acid / C${b} alcohol`, family:"Esterification / Hydrolysis"};
+    }
+  },
+  redox: {
+    label:"Metal Reactivity & Displacement",
+    domain:"inorganic",
+    count(){ return METALS.length * PARTNERS.length * CONCENTRATIONS.length * REDOX_TEMPS.length; },
+    formulaText(){ return `${METALS.length} metals × ${PARTNERS.length} acid/salt/nonmetal partners × ${CONCENTRATIONS.length} concentrations × ${REDOX_TEMPS.length} temps`; },
+    params:[
+      {key:"metal", label:"Metal", type:"select", options:METALS.map(m=>({v:m,label:m}))},
+      {key:"partner", label:"Acid / salt / partner", type:"select", options:PARTNERS.map(p=>({v:p,label:p}))},
+      {key:"conc", label:"Concentration", type:"select", options:CONCENTRATIONS.map(c=>({v:c,label:c}))},
+      {key:"temp", label:"Temperature", type:"select", options:REDOX_TEMPS.map(t=>({v:t,label:t}))},
+    ],
+    generate(v){
+      const eq = `${v.metal} + ${v.partner} → product(s) (redox / displacement, reactivity-series dependent)`;
+      const rank = REACTIVITY_RANK[v.metal]||15;
+      const feasible = rank <= 20;
+      const note = feasible ? `${v.metal} sits reasonably high in the reactivity series, so this reaction is expected to proceed, releasing H₂ (with acids) or displacing a less reactive metal (with salts).` : `${v.metal} is a comparatively unreactive (noble) metal; this reaction is expected to be slow or not proceed at all under these conditions without additional oxidizing power.`;
+      const app = `Reactivity-series chemistry like this underlies metal extraction, corrosion resistance, and cementation-based metal recovery in mining and recycling.`;
+      return {eq, cond:`${v.conc}, ${v.temp}`, note, app, substrate:`${v.metal} + ${v.partner}`, family:"Metal Reactivity / Displacement"};
+    }
+  },
+  coord: {
+    label:"Coordination Complex Formation",
+    domain:"inorganic",
+    count(){ return METAL_IONS.length * LIGANDS.length * COORD_NUM.length * COORD_GEOM.length; },
+    formulaText(){ return `${METAL_IONS.length} metal ions × ${LIGANDS.length} ligands × ${COORD_NUM.length} coordination numbers × ${COORD_GEOM.length} geometries`; },
+    params:[
+      {key:"metal", label:"Metal ion", type:"select", options:METAL_IONS.map(m=>({v:m,label:m}))},
+      {key:"ligand", label:"Ligand", type:"select", options:LIGANDS.map(l=>({v:l,label:l}))},
+      {key:"cn", label:"Coordination number", type:"select", options:COORD_NUM.map(c=>({v:c,label:String(c)}))},
+      {key:"geom", label:"Geometry", type:"select", options:COORD_GEOM.map(g=>({v:g,label:g}))},
+    ],
+    generate(v){
+      const cn = parseInt(v.cn);
+      const metalBare = v.metal.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻]/g,"");
+      const eq = `${v.metal} + ${cn} ${v.ligand} → [${metalBare}(${v.ligand})${cn}]ⁿ⁺ (${v.geom.toLowerCase()})`;
+      const note = `Lewis acid–base coordination: the ligand donates electron pairs to the metal center, forming a ${v.geom.toLowerCase()} complex with coordination number ${cn}. Overall complex charge (ⁿ⁺) depends on the specific charges of the metal ion and ligands involved.`;
+      const app = `Coordination complexes of this type are relevant to catalysis, analytical chemistry (colorimetric metal tests), MRI contrast agents, and heavy-metal chelation therapy, depending on the specific metal and ligand.`;
+      return {eq, cond:`Aqueous or non-aqueous, ligand excess`, note, app, substrate:`${v.metal} + ${v.ligand}`, family:"Coordination Chemistry"};
+    }
+  },
+  halogenation: {
+    label:"Radical Halogenation of Alkanes",
+    domain:"organic",
+    count(){ return sumRange(1,60) * HALOGENS.length * HAL_INITIATORS.length * HAL_EQUIV.length; },
+    formulaText(){ return `Σ(chain 1–60, C–H sites) × ${HALOGENS.length} halogens × ${HAL_INITIATORS.length} initiators × ${HAL_EQUIV.length} substitution levels`; },
+    params:[
+      {key:"chain", label:"Carbon chain length", type:"range", min:1, max:60, default:5},
+      {key:"position", label:"Site of substitution", type:"position", of:"chain"},
+      {key:"halogen", label:"Halogen", type:"select", options:HALOGENS.map(h=>({v:h.v,label:h.name}))},
+      {key:"initiator", label:"Initiator", type:"select", options:HAL_INITIATORS.map(i=>({v:i,label:i}))},
+      {key:"equiv", label:"Substitution level", type:"select", options:HAL_EQUIV.map(e=>({v:e,label:e}))},
+    ],
+    generate(v){
+      const n=parseInt(v.chain), pos=parseInt(v.position)||1;
+      const eq = `C${n}H${2*n+2} (${chainName(n)}ane) + ${v.halogen}₂ → ${pos}-${v.halogen.toLowerCase()==="f"?"fluoro":v.halogen.toLowerCase()==="cl"?"chloro":v.halogen.toLowerCase()==="br"?"bromo":"iodo"}${chainName(n)}ane + H${v.halogen}`;
+      const note = `Free-radical chain substitution initiated by ${v.initiator.toLowerCase()}: initiation generates halogen radicals, which abstract a hydrogen atom, followed by propagation steps that consume the halogen and regenerate the radical.`;
+      const app = `${chainSizeClass(n)}. ${v.equiv} on this scaffold is relevant to solvent, refrigerant, and specialty-monomer production, depending on the final halogen content.`;
+      return {eq, cond:`${v.initiator}`, note, app, substrate:`${chainName(n)}ane, C${pos}`, family:"Radical Halogenation"};
+    }
+  }
+};
+
+let grand = 0;
+Object.keys(FAMILIES).forEach(k=> grand += FAMILIES[k].count());
+
+/* ============ RENDER: counter + family grid ============ */
+document.getElementById('grandTotal').textContent = grand.toLocaleString('en-US');
+const familyGridEl = document.getElementById('familyGrid');
+familyGridEl.innerHTML = Object.keys(FAMILIES).map(k=>{
+  const f = FAMILIES[k];
+  return `<div class="family-card">
+    <h4>${f.label} <span class="badge ${f.domain}" style="margin-left:6px;">${f.domain}</span></h4>
+    <div class="formula">${f.formulaText()}</div>
+    <div class="fam-total">${f.count().toLocaleString('en-US')}</div>
+  </div>`;
+}).join('');
+
+/* ============ GENERATOR UI ============ */
+let activeFam = "subst";
+const famSelectRow = document.getElementById('famSelectRow');
+const paramGrid = document.getElementById('paramGrid');
+
+function renderFamChips(){
+  famSelectRow.innerHTML = Object.keys(FAMILIES).map(k=>
+    `<div class="fam-chip ${k===activeFam?'active':''}" data-fam="${k}">${FAMILIES[k].label}</div>`
+  ).join('');
+  famSelectRow.querySelectorAll('.fam-chip').forEach(el=>{
+    el.addEventListener('click', ()=>{ activeFam = el.getAttribute('data-fam'); renderFamChips(); renderParams(); });
+  });
+}
+
+function renderParams(){
+  const fam = FAMILIES[activeFam];
+  paramGrid.innerHTML = fam.params.map(p=>{
+    if(p.type==="range"){
+      return `<div class="param-field"><label>${p.label}</label><input type="number" id="p_${p.key}" min="${p.min}" max="${p.max}" value="${p.default}"></div>`;
+    }
+    if(p.type==="position"){
+      return `<div class="param-field"><label>${p.label}</label><select id="p_${p.key}"></select></div>`;
+    }
+    return `<div class="param-field"><label>${p.label}</label><select id="p_${p.key}">${p.options.map(o=>`<option value="${o.v}">${o.label}</option>`).join('')}</select></div>`;
+  }).join('');
+  // wire position dropdown(s) to chain
+  fam.params.filter(p=>p.type==="position").forEach(p=>{
+    const chainInput = document.getElementById('p_'+p.of);
+    const posSelect = document.getElementById('p_'+p.key);
+    function refreshPositions(){
+      const n = parseInt(chainInput.value)||1;
+      const max = p.offset ? Math.max(1,n+p.offset) : n;
+      let html='';
+      for(let i=1;i<=max;i++) html+=`<option value="${i}">${i}</option>`;
+      posSelect.innerHTML = html;
+    }
+    chainInput.addEventListener('input', refreshPositions);
+    refreshPositions();
+  });
+}
+
+function readParams(){
+  const fam = FAMILIES[activeFam];
+  const v = {};
+  fam.params.forEach(p=>{ v[p.key] = document.getElementById('p_'+p.key).value; });
+  return v;
+}
+
+function randomizeParams(){
+  const fam = FAMILIES[activeFam];
+  fam.params.forEach(p=>{
+    const el = document.getElementById('p_'+p.key);
+    if(p.type==="range"){ el.value = Math.floor(Math.random()*(p.max-p.min+1))+p.min; el.dispatchEvent(new Event('input')); }
+  });
+  fam.params.forEach(p=>{
+    const el = document.getElementById('p_'+p.key);
+    if(p.type==="select" || p.type==="position"){
+      const opts = el.options;
+      el.selectedIndex = Math.floor(Math.random()*opts.length);
+    }
+  });
+}
+
+let session = [];
+const sessionListEl = document.getElementById('sessionList');
+
+function renderSession(filterText){
+  const q = (filterText||'').toLowerCase();
+  const rows = session.filter(r=> !q || r.eq.toLowerCase().includes(q) || r.note.toLowerCase().includes(q) || r.family.toLowerCase().includes(q) || r.app.toLowerCase().includes(q));
+  if(session.length===0){ sessionListEl.innerHTML = '<div class="session-empty">Generated reactions will appear here.</div>'; return; }
+  if(rows.length===0){ sessionListEl.innerHTML = '<div class="session-empty">No generated reactions match your search.</div>'; return; }
+  sessionListEl.innerHTML = rows.slice().reverse().map(r=>`
+    <div class="rxn-card">
+      <div class="rxn-badges"><span class="badge generated">Generated</span><span class="badge ${r.domain}">${r.domain}</span><span class="badge verified" style="background:transparent;border:1px solid var(--line-soft);color:var(--ink-faint);">${r.family}</span></div>
+      <div class="eq mono">${r.eq}</div>
+      <div class="meta-row"><b>Conditions:</b> ${r.cond}<br><b>Mechanism:</b> ${r.note}<br><b>Relevance:</b> ${r.app}</div>
+    </div>`).join('');
+}
+
+document.getElementById('genBtn').addEventListener('click', ()=>{
+  const fam = FAMILIES[activeFam];
+  const v = readParams();
+  const r = fam.generate(v);
+  r.domain = fam.domain;
+  session.push(r);
+  renderSession(document.getElementById('sessionSearch').value);
+});
+document.getElementById('randBtn').addEventListener('click', ()=>{
+  const fam = FAMILIES[activeFam];
+  for(let i=0;i<5;i++){
+    randomizeParams();
+    const v = readParams();
+    const r = fam.generate(v);
+    r.domain = fam.domain;
+    session.push(r);
+  }
+  renderSession(document.getElementById('sessionSearch').value);
+});
+document.getElementById('sessionSearch').addEventListener('input', (e)=> renderSession(e.target.value));
+document.getElementById('clearSession').addEventListener('click', ()=>{ session=[]; renderSession(); });
+
+renderFamChips();
+renderParams();
+
+/* ============ VERIFIED LIBRARY ============ */
+const libGrid = document.getElementById('libGrid');
+const libSearch = document.getElementById('libSearch');
+const libCatFilter = document.getElementById('libCatFilter');
+const libDomainFilter = document.getElementById('libDomainFilter');
+const libCount = document.getElementById('libCount');
+
+const domains = [...new Set(CURATED.map(c=>c.domain))].sort();
+libDomainFilter.innerHTML += domains.map(d=>`<option value="${d}">${d}</option>`).join('');
+
+function renderLib(){
+  const q = libSearch.value.toLowerCase();
+  const cat = libCatFilter.value;
+  const dom = libDomainFilter.value;
+  let rows = CURATED.filter(c=>{
+    if(cat && c.cat!==cat) return false;
+    if(dom && c.domain!==dom) return false;
+    if(q){
+      const hay = (c.name+' '+c.eq+' '+c.app+' '+c.type+' '+c.domain).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  libCount.textContent = `${rows.length} verified reaction${rows.length!==1?'s':''}`;
+  libGrid.innerHTML = rows.map((c,i)=>`
+    <div class="lib-item" data-idx="${CURATED.indexOf(c)}">
+      <div class="rxn-badges"><span class="badge verified">Verified</span><span class="badge ${c.cat}">${c.cat}</span><span class="badge" style="background:transparent;border:1px solid var(--line-soft);color:var(--ink-faint);">${c.type}</span></div>
+      <h4>${c.name}</h4>
+      <div class="eq mono">${c.eq}</div>
+      <div class="lib-detail" id="detail-${CURATED.indexOf(c)}">
+        <div><b>Conditions</b>${c.cond}</div>
+        <div><b>Application</b>${c.app}</div>
+        <div><b>Discovery</b>${c.discoverer||''}</div>
+        <div><b>Notes</b>${c.notes}</div>
+      </div>
+    </div>`).join('');
+  libGrid.querySelectorAll('.lib-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const idx = el.getAttribute('data-idx');
+      document.getElementById('detail-'+idx).classList.toggle('show');
+    });
+  });
+}
+libSearch.addEventListener('input', renderLib);
+libCatFilter.addEventListener('change', renderLib);
+libDomainFilter.addEventListener('change', renderLib);
+renderLib();
+
+})();
+
+</script>
+</body>
+</html>
